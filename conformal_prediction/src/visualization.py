@@ -52,23 +52,23 @@ def visualize_results(
     axes[1, 0].axis('off')
     plt.colorbar(im1, ax=axes[1, 0], fraction=0.046, pad=0.04)
     
-    # Confident predictions (set size = 1)
-    confident = (set_sizes == 1)
+    # Confident predictions (set size <= 4)
+    confident = (set_sizes <= 4)
     axes[1, 1].imshow(confident, cmap='RdYlGn')
     axes[1, 1].set_title(
-        f"Confident Predictions\n(Set Size = 1: {100*confident.mean():.1f}%)",
+        f"Confident Predictions\n(Set Size <= 4: {100*confident.mean():.1f}%)",
         fontsize=12, fontweight='bold'
     )
     axes[1, 1].axis('off')
     
-    # Uncertain predictions (set size > 3)
-    uncertain = (set_sizes > 3)
-    axes[1, 2].imshow(uncertain, cmap='RdYlGn_r')
-    axes[1, 2].set_title(
-        f"Uncertain Predictions\n(Set Size > 3: {100*uncertain.mean():.1f}%)",
-        fontsize=12, fontweight='bold'
-    )
-    axes[1, 2].axis('off')
+    # # Uncertain predictions (set size >= 5)
+    # uncertain = (set_sizes >= 5)
+    # axes[1, 2].imshow(uncertain, cmap='RdYlGn_r')
+    # axes[1, 2].set_title(
+    #     f"Uncertain Predictions\n(Set Size >= 5: {100*uncertain.mean():.1f}%)",
+    #     fontsize=12, fontweight='bold'
+    # )
+    # axes[1, 2].axis('off')
     
     plt.tight_layout()
     

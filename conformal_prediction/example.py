@@ -1,24 +1,27 @@
-"""
-Example script that replicates the notebook workflow.
-
-This demonstrates how to use the library to replicate the exact 
-workflow from the original notebook.
-"""
 from src.model import CLIPSegModel
 from src.conformal import ConformalPredictor
 from src.data_utils import load_image_and_mask, split_calibration_test
 from src.visualization import visualize_results, print_statistics, show_example_predictions
+from src.get_image_classes import *
+from src.conformity_scores import *
+
+import pandas as pd
 
 
 def main():
     # Configuration matching the notebook
     dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone"
-    
-    image_path = f"{dataset_path}/images/015.jpg"
-    mask_path = f"{dataset_path}/labels/tiff/015.tiff"
-    
-    texts = ['paved-area', 'dirt', 'grass', 'rocks', 'person', 'dog', 'car', 'bicycle', 'tree']
-    indices = [1, 2, 3, 6, 15, 16, 17, 18, 19]
+
+    file = "004"
+    image_path = f"{dataset_path}/images/{file}.jpg"
+    mask_path = f"{dataset_path}/labels/tiff/{file}.tiff"
+    csv_path = f"{dataset_path}/classes.csv"
+
+    classes_df = pd.read_csv(csv_path)
+    texts = list(classes_df["name"].values)
+    indices = [i for i in range(len(texts))]
+    # texts = ['paved-area', 'dirt', 'grass', 'rocks', 'person', 'dog', 'car', 'bicycle', 'tree']
+    # indices = [1, 2, 3, 6, 15, 16, 17, 18, 19]
     
     alpha = 0.1  # 90% coverage
     target_size = (352, 352)
@@ -29,7 +32,7 @@ def main():
     
     # Step 1: Load data
     print("\n[Step 1] Loading image and mask...")
-    image, ground_truth = load_image_and_mask(
+    image, ground_truth, class_pixel_counts = load_image_and_mask(
         image_path, 
         mask_path, 
         indices, 
@@ -37,6 +40,10 @@ def main():
     )
     print(f"Ground truth shape: {ground_truth.shape}")
     print(f"Ground truth classes: {set(ground_truth.flatten())}")
+    print("Class distribution:")
+    for i, (class_name, count) in enumerate(zip(texts, class_pixel_counts)):
+        pct = 100 * count / (352 * 352)
+        print(f"  {i}. {class_name:15s}: {count:6d} pixels ({pct:5.2f}%)")
     
     # Step 2: Split pixels
     print("\n[Step 2] Splitting calibration/test sets...")
@@ -76,9 +83,9 @@ def main():
         probs_np, 
         prediction_sets, 
         set_sizes,
-        save_path="outputs/conformal_prediction_results.png"
+        save_path=f"outputs/conformal_prediction_{file}_results.png"
     )
-    print("Saved: outputs/conformal_prediction_results.png")
+    print(f"Saved: outputs/conformal_prediction_{file}_results.png")
     
     # Show examples
     show_example_predictions(

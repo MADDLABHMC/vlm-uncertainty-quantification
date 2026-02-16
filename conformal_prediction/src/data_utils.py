@@ -32,17 +32,47 @@ def load_image_and_mask(
     # Load multi-channel mask
     mask = tiff.imread(mask_path)  # Shape: (H, W, num_channels)
     
-    # Prepare ground truth by extracting relevant channels
-    ground_truth = prepare_ground_truth(mask, class_indices, target_size)
+    # Prepare ground truth by extracting relevant channels + class pixel counts
+    ground_truth, class_pixel_counts = prepare_ground_truth(mask, class_indices, target_size)
     
-    return image, ground_truth
+    return image, ground_truth, class_pixel_counts
 
 
+# def prepare_ground_truth(
+#     mask: np.ndarray,
+#     class_indices: list[int],
+#     target_size: Tuple[int, int]
+# ) -> np.ndarray:
+#     """Extract relevant channels from mask and resize.
+    
+#     Args:
+#         mask: Multi-channel mask array of shape (H, W, num_channels)
+#         class_indices: List of channel indices to extract
+#         target_size: Target (height, width) to resize to
+        
+#     Returns:
+#         Ground truth array of shape (target_H, target_W) with class labels
+#     """
+#     H, W = target_size
+#     ground_truth = np.zeros((H, W), dtype=np.int64)
+    
+#     for i, idx in enumerate(class_indices):
+#         channel = mask[:, :, idx]
+        
+#         # Resize channel to target size
+#         channel_resized = np.array(
+#             Image.fromarray(channel.astype(np.uint8)).resize((W, H), Image.NEAREST)
+#         )
+        
+#         # Assign class i where channel has max value (255)
+#         ground_truth[channel_resized == 255] = i
+    
+#     return ground_truth
 def prepare_ground_truth(
     mask: np.ndarray,
     class_indices: list[int],
     target_size: Tuple[int, int]
-) -> np.ndarray:
+) -> Tuple[np.ndarray, np.ndarray]:
     """Extract relevant channels from mask and resize.
     
     Args:
@@ -51,9 +81,11 @@ def prepare_ground_truth(
         target_size: Target (height, width) to resize to
         
     Returns:
-        Ground truth array of shape (target_H, target_W) with class labels
+        ground_truth: Array of shape (target_H, target_W) with class labels
+        class_pixel_counts: Array of shape (num_classes,) with pixel count per class
     """
     H, W = target_size
+    num_classes = len(class_indices)
     ground_truth = np.zeros((H, W), dtype=np.int64)
     
     for i, idx in enumerate(class_indices):
@@ -67,7 +99,10 @@ def prepare_ground_truth(
         # Assign class i where channel has max value (255)
         ground_truth[channel_resized == 255] = i
     
-    return ground_truth
+    # Count pixels per class
+    class_pixel_counts = np.bincount(ground_truth.flatten(), minlength=num_classes)
+    
+    return ground_truth, class_pixel_counts
 
 
 def split_calibration_test(
