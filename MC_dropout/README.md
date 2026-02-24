@@ -101,7 +101,7 @@ python run_convergence_study.py --image image.jpg --mask mask.tiff --output-dir 
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `--n-samples` | 30 | Number of MC Dropout forward passes |
+| `--n-samples` | 500 | Number of MC Dropout forward passes |
 | `--dropout-rate` | 0.1 | Dropout probability in vision encoder |
 | `--model` | CIDAS/clipseg-rd64-refined | HuggingFace model ID |
 | `--limit` | — | (run_on_dataset) Limit number of images for testing |
