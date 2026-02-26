@@ -1,0 +1,30 @@
+Average Per-Class Coverage Across Dataset
+Class              Coverage (%)
+-----------------------------------
+unlabeled                0.3375
+paved-area              91.6968
+dirt                    58.9215
+grass                   95.9572
+gravel                  60.3342
+water                   74.5114
+rocks                   52.8080
+pool                    92.4342
+vegetation              84.1397
+roof                    91.3967
+wall                    88.9732
+window                  54.8884
+door                    31.6662
+fence                   53.4627
+fence-pole              55.0481
+person                  48.5010
+dog                      0.1323
+car                     94.6849
+bicycle                 40.4408
+tree                    87.8842
+bald-tree               66.8086
+ar-marker               61.3137
+obstacle                67.9066
+conflicting                 N/A
+
+Mean Model Inference Time: 4.835879929307421 seconds
+Mean Conformal Prediction Steps Time: 0.007404877955004849 seconds

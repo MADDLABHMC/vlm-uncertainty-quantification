@@ -26,7 +26,7 @@ def load_image_and_mask(
         Tuple of (image, ground_truth_mask)
     """
     # Load image
-    print(image_path)
+    # print(image_path)
     image = load_image(image_path)
     
     # Load multi-channel mask

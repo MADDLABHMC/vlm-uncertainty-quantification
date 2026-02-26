@@ -1,0 +1,31 @@
+Class distribution across dataset:
+Class               Pixels   % of total
+----------------------------------------
+unlabeled      : 894730 pixels ( 1.81%)
+paved-area     : 18544698 pixels (37.42%)
+dirt           : 1512226 pixels ( 3.05%)
+grass          : 9840808 pixels (19.86%)
+gravel         : 3516128 pixels ( 7.09%)
+water          : 1089292 pixels ( 2.20%)
+rocks          : 338216 pixels ( 0.68%)
+pool           : 313373 pixels ( 0.63%)
+vegetation     : 3413653 pixels ( 6.89%)
+roof           : 3632096 pixels ( 7.33%)
+wall           : 1287196 pixels ( 2.60%)
+window         : 270187 pixels ( 0.55%)
+door           :  15037 pixels ( 0.03%)
+fence          : 450554 pixels ( 0.91%)
+fence-pole     :  21048 pixels ( 0.04%)
+person         : 497175 pixels ( 1.00%)
+dog            :   6508 pixels ( 0.01%)
+car            : 385797 pixels ( 0.78%)
+bicycle        : 100636 pixels ( 0.20%)
+tree           : 1000102 pixels ( 2.02%)
+bald-tree      : 646576 pixels ( 1.30%)
+ar-marker      : 109383 pixels ( 0.22%)
+obstacle       : 1676181 pixels ( 3.38%)
+conflicting    :      0 pixels ( 0.00%)
+
+
+
+Total number of pixels: 49561600
