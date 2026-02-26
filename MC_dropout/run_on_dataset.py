@@ -79,60 +79,49 @@ def run_single_image(
     }
 
 
-def main(
-    dataset_path: str,
-    output_dir: str = "outputs",
-    n_samples: int = 500,
+def run_dataset_evaluation(
+    dataset_path: str | Path,
+    n_samples: int = 30,
     dropout_rate: float = 0.1,
     limit: int | None = None,
     device: str | None = None,
-    save_per_image: bool = True,
     class_names: list[str] | None = None,
     class_indices: list[int] | None = None,
-):
-    """Run MC Dropout on entire dataset."""
+    verbose: bool = True,
+) -> tuple[dict, list[dict]]:
+    """
+    Run MC Dropout on dataset and return aggregate + per_image results.
+
+    Returns:
+        (aggregate dict, per_image results list)
+    """
     from tqdm import tqdm
 
     device = device or _get_device()
     dataset_path = Path(dataset_path)
-    output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True, parents=True)
 
-    print("=" * 60)
-    print("MC DROPOUT - FULL DATASET EVALUATION")
-    print("=" * 60)
+    if verbose:
+        print(f"\n  Dropout rate: {dropout_rate}")
 
-    # Discover image/mask pairs
-    print("\n[1/5] Discovering dataset...")
     pairs = iter_dataset_pairs(dataset_path)
     if limit is not None:
         pairs = pairs[:limit]
-        print(f"  Using subset: {len(pairs)} images (--limit {limit})")
-    else:
-        print(f"  Found {len(pairs)} image/mask pairs")
 
-    # Load classes: use provided subset or all from dataset
     full_class_names, full_indices = load_dataset_classes(dataset_path)
     if class_names is not None:
         if class_indices is None:
             class_indices = get_indices_for_classes(full_class_names, class_names)
-        print(f"  Classes (subset): {len(class_names)} — {class_names}")
     else:
         class_names = full_class_names
         class_indices = full_indices
-        print(f"  Classes: {len(class_names)} (all from dataset)")
 
-    # Load model once
-    print("\n[2/5] Loading model...")
     model, processor = load_model(dropout_rate=dropout_rate)
     model.to(device)
 
-    # Process each image
-    print("\n[3/5] Running MC Dropout on dataset...")
     per_image_results = []
     total_start = time.time()
 
-    for i, (img_path, mask_path) in enumerate(tqdm(pairs, desc="Images")):
+    for img_path, mask_path in tqdm(pairs, desc=f"  Images (p={dropout_rate})", disable=not verbose):
         start = time.time()
         result = run_single_image(
             model, processor,
@@ -143,20 +132,11 @@ def main(
         result["inference_time"] = time.time() - start
         per_image_results.append(result)
 
-        if save_per_image:
-            per_img_dir = output_path / "per_image"
-            per_img_dir.mkdir(exist_ok=True)
-            with open(per_img_dir / f"{img_path.stem}.json", "w") as f:
-                json.dump(result, f, indent=2)
-
     total_time = time.time() - total_start
 
-    # Aggregate metrics
-    print("\n[4/5] Aggregating results...")
     mean_ious = [r["mean_iou"] for r in per_image_results]
     mean_uncertainties = [r["mean_uncertainty"] for r in per_image_results]
 
-    # Aggregate per-class IoU: mean IoU per class across images where class is present
     per_class_ious: dict[str, list[float]] = {name: [] for name in class_names}
     for r in per_image_results:
         for name, iou in r.get("per_class_iou", {}).items():
@@ -191,7 +171,70 @@ def main(
         },
     }
 
-    # Save results
+    return aggregate, per_image_results
+
+
+def main(
+    dataset_path: str,
+    output_dir: str = "outputs",
+    n_samples: int = 30,
+    dropout_rate: float = 0.1,
+    limit: int | None = None,
+    device: str | None = None,
+    save_per_image: bool = True,
+    class_names: list[str] | None = None,
+    class_indices: list[int] | None = None,
+):
+    """Run MC Dropout on entire dataset."""
+    device = device or _get_device()
+    dataset_path = Path(dataset_path)
+    output_path = Path(output_dir)
+    output_path.mkdir(exist_ok=True, parents=True)
+
+    print("=" * 60)
+    print("MC DROPOUT - FULL DATASET EVALUATION")
+    print("=" * 60)
+
+    print("\n[1/5] Discovering dataset...")
+    pairs = iter_dataset_pairs(dataset_path)
+    if limit is not None:
+        pairs = pairs[:limit]
+        print(f"  Using subset: {len(pairs)} images (--limit {limit})")
+    else:
+        print(f"  Found {len(pairs)} image/mask pairs")
+
+    full_class_names, full_indices = load_dataset_classes(dataset_path)
+    if class_names is not None:
+        if class_indices is None:
+            class_indices = get_indices_for_classes(full_class_names, class_names)
+        print(f"  Classes (subset): {len(class_names)} — {class_names}")
+    else:
+        class_names = full_class_names
+        class_indices = full_indices
+        print(f"  Classes: {len(class_names)} (all from dataset)")
+
+    print("\n[2/5] Loading model...")
+    print("\n[3/5] Running MC Dropout on dataset...")
+    aggregate, per_image_results = run_dataset_evaluation(
+        dataset_path=dataset_path,
+        n_samples=n_samples,
+        dropout_rate=dropout_rate,
+        limit=limit,
+        device=device,
+        class_names=class_names,
+        class_indices=class_indices,
+        verbose=True,
+    )
+
+    if save_per_image:
+        print("\n[4/5] Saving per-image results...")
+        per_img_dir = output_path / "per_image"
+        per_img_dir.mkdir(exist_ok=True)
+        for r in per_image_results:
+            img_stem = Path(r["image"]).stem
+            with open(per_img_dir / f"{img_stem}.json", "w") as f:
+                json.dump(r, f, indent=2)
+
     print("\n[5/5] Saving results...")
     results_path = output_path / "dataset_results.json"
     with open(results_path, "w") as f:
@@ -201,7 +244,6 @@ def main(
         }, f, indent=2)
     print(f"  Saved: {results_path}")
 
-    # Print summary
     print("\n" + "=" * 60)
     print("DATASET SUMMARY")
     print("=" * 60)
