@@ -70,32 +70,36 @@ def main():
     
     # Step 6: Evaluate
     print("\n[Step 6] Evaluating coverage...")
-    empirical_coverage = cp.evaluate_coverage(prediction_sets, ground_truth, test_mask)
+    empirical_coverage_vals = cp.evaluate_coverage(prediction_sets, ground_truth, test_mask)
+
+    print("\nPer Class Coverage:")
+    for i, cov in enumerate(empirical_coverage_vals):
+        print(f"Class {texts[i]:<12} : coverage {cov*100:6.2f}%")
     
-    # Print statistics
-    print_statistics(set_sizes, empirical_coverage, 1-alpha, threshold)
+    # # Print statistics
+    # print_statistics(set_sizes, empirical_coverage, 1-alpha, threshold)
     
-    # Visualize
-    print("\n[Step 7] Creating visualizations...")
-    fig = visualize_results(
-        image, 
-        ground_truth, 
-        probs_np, 
-        prediction_sets, 
-        set_sizes,
-        save_path=f"outputs/conformal_prediction_{file}_results.png"
-    )
-    print(f"Saved: outputs/conformal_prediction_{file}_results.png")
+    # # Visualize
+    # print("\n[Step 7] Creating visualizations...")
+    # fig = visualize_results(
+    #     image, 
+    #     ground_truth, 
+    #     probs_np, 
+    #     prediction_sets, 
+    #     set_sizes,
+    #     save_path=f"outputs/conformal_prediction_{file}_results.png"
+    # )
+    # print(f"Saved: outputs/conformal_prediction_{file}_results.png")
     
-    # Show examples
-    show_example_predictions(
-        probs_np, 
-        prediction_sets, 
-        ground_truth, 
-        test_mask, 
-        texts,
-        num_examples=5
-    )
+    # # Show examples
+    # show_example_predictions(
+    #     probs_np, 
+    #     prediction_sets, 
+    #     ground_truth, 
+    #     test_mask, 
+    #     texts,
+    #     num_examples=5
+    # )
     
     print("\n" + "="*60)
     print("COMPLETE!")

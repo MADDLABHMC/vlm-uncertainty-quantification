@@ -1,0 +1,27 @@
+Average Per-Class Coverage Across Dataset
+Class              Coverage (%)
+-----------------------------------
+unlabeled                0.1630
+paved-area              96.9149
+dirt                    58.6950
+grass                   97.5389
+gravel                  33.8872
+water                       N/A
+rocks                    0.0000
+pool                        N/A
+vegetation              78.5230
+roof                    97.4296
+wall                    85.8538
+window                  61.5385
+door                    49.2823
+fence                   97.9009
+fence-pole              95.7944
+person                  55.8311
+dog                         N/A
+car                    100.0000
+bicycle                 67.1629
+tree                    95.4281
+bald-tree               80.9021
+ar-marker               50.0000
+obstacle                63.6489
+conflicting                 N/A

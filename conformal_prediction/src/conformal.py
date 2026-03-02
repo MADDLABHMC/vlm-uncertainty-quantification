@@ -97,8 +97,31 @@ class ConformalPredictor:
         
         # Get test pixel indices
         test_indices = np.where(test_mask_flat)[0]
+
+        # Check if true class is in prediction set for each test pixel for each class
+        num_classes = prediction_sets.shape[-1]
+        per_class_coverage = np.zeros(num_classes)
+
+        for c in range(num_classes):
+            # test pixels where ground truth is label c
+            class_pixels = test_indices[ground_truth_flat[test_indices]  == c]
+            if len(class_pixels) == 0:
+                per_class_coverage[c] = np.nan
+            else:
+                per_class_coverage[c] = prediction_sets_flat[class_pixels, c].mean()
+
+        # # Check if true class is in prediction set for each test pixel
+        # coverage = prediction_sets_flat[test_indices, ground_truth_flat[test_indices]]
+
         
-        # Check if true class is in prediction set for each test pixel
-        coverage = prediction_sets_flat[test_indices, ground_truth_flat[test_indices]]
+        return per_class_coverage
+
+
+
+
+
+
+
+
+
         
-        return coverage.mean()
