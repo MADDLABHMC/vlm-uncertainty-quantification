@@ -147,11 +147,13 @@ def calculate_stats(
 
 
 if __name__ == "__main__":
+
+    num_images = 400
     
     calculate_stats(
         dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
         indices = [1, 3, 9, 17, 19, 21, 22],
-        length = 10,
+        length = num_images,
         image_type  = "normal",
         coverage_dir = "coverage_vals",
         pixel_counts_dir = "pixel_counts",
@@ -161,7 +163,7 @@ if __name__ == "__main__":
     calculate_stats(
         dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
         indices = [1, 3, 9, 17, 19, 21, 22],
-        length = 10,
+        length = num_images,
         image_type  = "monochrome",
         coverage_dir = "coverage_vals",
         pixel_counts_dir = "pixel_counts",
@@ -171,7 +173,7 @@ if __name__ == "__main__":
     calculate_stats(
         dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
         indices = [1, 3, 9, 17, 19, 21, 22],
-        length = 10,
+        length = num_images,
         image_type  = "gaussian_blur",
         coverage_dir = "coverage_vals",
         pixel_counts_dir = "pixel_counts",
@@ -181,7 +183,7 @@ if __name__ == "__main__":
     calculate_stats(
         dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
         indices = [1, 3, 9, 17, 19, 21, 22],
-        length = 10,
+        length = num_images,
         image_type  = "salt_and_pepper",
         coverage_dir = "coverage_vals",
         pixel_counts_dir = "pixel_counts",
