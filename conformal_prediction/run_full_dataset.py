@@ -148,9 +148,36 @@ if __name__ == "__main__":
         indices=[1, 3, 9, 17, 19, 21, 22],
         target_size=(352, 352),
         alpha=0.1,
-        num_images=10,
+        num_images=None,
+        stats_dir="stats",
+        image_type="normal"
+    )
+    run(
+        dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+        indices=[1, 3, 9, 17, 19, 21, 22],
+        target_size=(352, 352),
+        alpha=0.1,
+        num_images=None,
         stats_dir="stats",
         image_type="monochrome"
+    )
+    run(
+        dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+        indices=[1, 3, 9, 17, 19, 21, 22],
+        target_size=(352, 352),
+        alpha=0.1,
+        num_images=None,
+        stats_dir="stats",
+        image_type="gaussian_blur"
+    )
+    run(
+        dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+        indices=[1, 3, 9, 17, 19, 21, 22],
+        target_size=(352, 352),
+        alpha=0.1,
+        num_images=None,
+        stats_dir="stats",
+        image_type="salt_and_pepper"
     )
 
 

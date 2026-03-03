@@ -1,0 +1,12 @@
+# Ignore stats
+conformal_prediction/stats/
+
+# Ignore pickles
+*.pkl
+
+# Ignore checkpoints
+.ipynb_checkpoints/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
