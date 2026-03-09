@@ -79,6 +79,7 @@ def run(
             str(image_path), str(mask_path), indices, target_size
         )
         image = load_img(image_path)
+        # print(image_type)
         if image_type == "monochrome":
             image = make_monochrome(image)
         elif image_type.startswith("gaussian_blur_"):
@@ -154,47 +155,55 @@ if __name__ == "__main__":
 
 
     image_type_dict = {
-        # "normal": [],
+        "normal": [],
         "monochrome": [],
         "gaussian_blur": [2,5,10,20],
         "vignette": [1,2,3,4],
         "occlude": [15,20,25,30],
         "smoke": [10,20,30,40]
     }
+    # image_type_dict = {
+    #     "normal": [],
+    #     "monochrome": [],
+    #     # "gaussian_blur": [2,5],
+    #     # "vignette": [1,2],
+    #     # "occlude": [15,20],
+    #     # "smoke": [10,20]
+    # }
 
-    num_images = 20
-    run(
-        dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-        indices=[1, 3, 9, 17, 19, 21, 22],
-        target_size=(352, 352),
-        alpha=0.1,
-        num_images=num_images,
-        stats_dir="stats",
-        image_type="monochrome"
-    )
+    num_images = None
+    # run(
+    #     dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+    #     indices=[1, 3, 9, 17, 19, 21, 22],
+    #     target_size=(352, 352),
+    #     alpha=0.1,
+    #     num_images=num_images,
+    #     stats_dir="stats",
+    #     image_type="monochrome"
+    # )
 
-    # for image_type, vals in image_type_dict.items():
-    #     if vals:
-    #         for val in vals:
-    #             run(
-    #                 dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-    #                 indices=[1, 3, 9, 17, 19, 21, 22],
-    #                 target_size=(352, 352),
-    #                 alpha=0.1,
-    #                 num_images=num_images,
-    #                 stats_dir="stats",
-    #                 image_type=f"{image_type}_{val}"
-    #             )
-    #         else: 
-    #             run(
-    #                 dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-    #                 indices=[1, 3, 9, 17, 19, 21, 22],
-    #                 target_size=(352, 352),
-    #                 alpha=0.1,
-    #                 num_images=num_images,
-    #                 stats_dir="stats",
-    #                 image_type=image_type
-    #             )
+    for image_type, vals in image_type_dict.items():
+        if vals:
+            for val in vals:
+                run(
+                    dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+                    indices=[1, 3, 9, 17, 19, 21, 22],
+                    target_size=(352, 352),
+                    alpha=0.1,
+                    num_images=num_images,
+                    stats_dir="stats",
+                    image_type=f"{image_type}_{val}"
+                )
+        else: 
+            run(
+                dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+                indices=[1, 3, 9, 17, 19, 21, 22],
+                target_size=(352, 352),
+                alpha=0.1,
+                num_images=num_images,
+                stats_dir="stats",
+                image_type=image_type
+            )
     
             
 

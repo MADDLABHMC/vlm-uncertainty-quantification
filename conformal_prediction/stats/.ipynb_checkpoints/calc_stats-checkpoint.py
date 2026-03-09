@@ -148,45 +148,71 @@ def calculate_stats(
 
 if __name__ == "__main__":
 
+    # num_images = 400
+    image_type_dict = {
+        "normal": [],
+        "monochrome": [],
+        "gaussian_blur": [2,5,10,20],
+        "vignette": [1,2,3,4],
+        "occlude": [15,20,25,30],
+        "smoke": [10,20,30,40]
+    }
     num_images = 400
+
+    for image_type, vals in image_type_dict.items():
+        if vals:
+            for val in vals:
+                calculate_stats(
+                    dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+                    indices = [1, 3, 9, 17, 19, 21, 22],
+                    length = num_images,
+                    image_type  = f"{image_type}_{val}",
+                    coverage_dir = "coverage_vals",
+                    pixel_counts_dir = "pixel_counts",
+                    prediction_sets_dir = "prediction_sets",
+                    set_sizes_dir = "set_sizes"
+                )
+        else: 
+            calculate_stats(
+                dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+                indices = [1, 3, 9, 17, 19, 21, 22],
+                length = num_images,
+                image_type  = image_type,
+                coverage_dir = "coverage_vals",
+                pixel_counts_dir = "pixel_counts",
+                prediction_sets_dir = "prediction_sets",
+                set_sizes_dir = "set_sizes"
+            )
+            
     
-    calculate_stats(
-        dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-        indices = [1, 3, 9, 17, 19, 21, 22],
-        length = num_images,
-        image_type  = "normal",
-        coverage_dir = "coverage_vals",
-        pixel_counts_dir = "pixel_counts",
-        prediction_sets_dir = "prediction_sets",
-        set_sizes_dir = "set_sizes"
-    )
-    calculate_stats(
-        dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-        indices = [1, 3, 9, 17, 19, 21, 22],
-        length = num_images,
-        image_type  = "monochrome",
-        coverage_dir = "coverage_vals",
-        pixel_counts_dir = "pixel_counts",
-        prediction_sets_dir = "prediction_sets",
-        set_sizes_dir = "set_sizes"
-    )
-    calculate_stats(
-        dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-        indices = [1, 3, 9, 17, 19, 21, 22],
-        length = num_images,
-        image_type  = "gaussian_blur",
-        coverage_dir = "coverage_vals",
-        pixel_counts_dir = "pixel_counts",
-        prediction_sets_dir = "prediction_sets",
-        set_sizes_dir = "set_sizes"
-    )
-    calculate_stats(
-        dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
-        indices = [1, 3, 9, 17, 19, 21, 22],
-        length = num_images,
-        image_type  = "salt_and_pepper",
-        coverage_dir = "coverage_vals",
-        pixel_counts_dir = "pixel_counts",
-        prediction_sets_dir = "prediction_sets",
-        set_sizes_dir = "set_sizes"
-    )
+    
+    # calculate_stats(
+    #     dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+    #     indices = [1, 3, 9, 17, 19, 21, 22],
+    #     length = num_images,
+    #     image_type  = "monochrome",
+    #     coverage_dir = "coverage_vals",
+    #     pixel_counts_dir = "pixel_counts",
+    #     prediction_sets_dir = "prediction_sets",
+    #     set_sizes_dir = "set_sizes"
+    # )
+    # calculate_stats(
+    #     dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+    #     indices = [1, 3, 9, 17, 19, 21, 22],
+    #     length = num_images,
+    #     image_type  = "gaussian_blur",
+    #     coverage_dir = "coverage_vals",
+    #     pixel_counts_dir = "pixel_counts",
+    #     prediction_sets_dir = "prediction_sets",
+    #     set_sizes_dir = "set_sizes"
+    # )
+    # calculate_stats(
+    #     dataset_path = "/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
+    #     indices = [1, 3, 9, 17, 19, 21, 22],
+    #     length = num_images,
+    #     image_type  = "salt_and_pepper",
+    #     coverage_dir = "coverage_vals",
+    #     pixel_counts_dir = "pixel_counts",
+    #     prediction_sets_dir = "prediction_sets",
+    #     set_sizes_dir = "set_sizes"
+    # )

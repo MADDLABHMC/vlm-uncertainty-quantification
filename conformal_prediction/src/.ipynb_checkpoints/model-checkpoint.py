@@ -18,6 +18,7 @@ class CLIPSegModel:
         """
         # Select device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = "cpu"
         print(f"[CLIPSeg] Using device: {self.device}")
 
         # Load processor and model
