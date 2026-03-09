@@ -88,17 +88,17 @@ def main(
     print("\n[4/6] Computing predictions and metrics...")
     predictions, _, normalized_entropy = compute_predictions_and_entropy(mean_probs)
 
-    mean_iou = 0.0
+    pixel_accuracy = 0.0
     stats = {}
     if ground_truth is not None and (ground_truth >= 0).any():
-        mean_iou, _ = compute_accuracy(
+        pixel_accuracy, _ = compute_accuracy(
             predictions, ground_truth, class_names, verbose=True
         )
         stats = compute_uncertainty_stats(
             normalized_entropy, predictions, ground_truth, class_names, verbose=True
         )
     else:
-        print("  Skipping IoU evaluation (no ground truth)")
+        print("  Skipping pixel accuracy evaluation (no ground truth)")
 
     # Visualize
     print("\n[5/6] Creating visualizations...")
@@ -107,7 +107,7 @@ def main(
         ground_truth if ground_truth is not None else np.zeros_like(predictions),
         predictions,
         normalized_entropy,
-        mean_iou,
+        pixel_accuracy,
         class_names,
         save_path=output_path / "mc_dropout_results.png",
     )
@@ -130,7 +130,7 @@ def main(
         "model": model_name,
         "dropout_rate": dropout_rate,
         "n_samples": n_samples,
-        "mean_iou": float(mean_iou),
+        "pixel_accuracy": float(pixel_accuracy),
         "inference_time": inference_time,
         "mean_uncertainty": float(normalized_entropy.mean()),
         **{k: v for k, v in stats.items() if v is not None},
