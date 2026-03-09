@@ -1,5 +1,5 @@
 """
-Run MC Dropout on an entire dataset (e.g., Semantic Drone).
+Run MC Dropout on an entire dataset.
 
 Processes all image/mask pairs, computes per-image metrics, and aggregates
 dataset-level statistics.
@@ -61,21 +61,55 @@ def run_single_image(
     )
 
     predictions, _, normalized_entropy = compute_predictions_and_entropy(mean_probs)
-    mean_iou, per_class_iou = compute_accuracy(
+    pixel_accuracy, per_class_accuracy = compute_accuracy(
         predictions, ground_truth, class_names, verbose=False
     )
 
-    # Flatten per-class IoU to {class_name: iou} (skip classes with no pixels)
-    per_class = {
-        name: iou for name, (iou, count) in per_class_iou.items()
-        if iou is not None
+    per_class_pixel_accuracy = {
+        name: acc for name, (acc, count) in per_class_accuracy.items()
+        if acc is not None
     }
+    per_class_uncertainty = {}
+    per_class_channel_std_probs = {}
+    for i, name in enumerate(class_names):
+        class_mask = ground_truth == i
+        n_class_pixels = int(class_mask.sum())
+        if n_class_pixels <= 0:
+            continue
+
+        class_entropy = normalized_entropy[class_mask]
+        class_std_prob = std_probs[:, :, i][class_mask]
+        per_class_uncertainty[name] = {
+            "mean_normalized_entropy": float(class_entropy.mean()),
+            "std_normalized_entropy": float(class_entropy.std()),
+        }
+        per_class_channel_std_probs[name] = {
+            "mean": float(class_std_prob.mean()),
+            "std": float(class_std_prob.std()),
+        }
+
+    uncertainty_map_file = None
+    if uncertainty_maps_dir is not None:
+        uncertainty_maps_dir.mkdir(parents=True, exist_ok=True)
+        uncertainty_map_file = uncertainty_maps_dir / f"{image_path.stem}_uncertainty.npz"
+        np.savez_compressed(
+            uncertainty_map_file,
+            std_probs=std_probs.astype(np.float32),
+            normalized_entropy=normalized_entropy.astype(np.float32),
+            predictions=predictions.astype(np.int16),
+        )
 
     return {
         "image": image_path.name,
-        "mean_iou": float(mean_iou),
+        "pixel_accuracy": float(pixel_accuracy),
         "mean_uncertainty": float(normalized_entropy.mean()),
-        "per_class_iou": per_class,
+        "std_uncertainty": float(normalized_entropy.std()),
+        "mean_std_prob": float(std_probs.mean()),
+        "std_std_prob": float(std_probs.std()),
+        "per_class_pixel_accuracy": per_class_pixel_accuracy,
+        "per_class_uncertainty": per_class_uncertainty,
+        "per_class_channel_std_probs": per_class_channel_std_probs,
+        "uncertainty_map_file": str(uncertainty_map_file) if uncertainty_map_file else None,
     }
 
 
@@ -87,6 +121,7 @@ def run_dataset_evaluation(
     device: str | None = None,
     class_names: list[str] | None = None,
     class_indices: list[int] | None = None,
+    uncertainty_maps_dir: Path | None = None,
     verbose: bool = True,
 ) -> tuple[dict, list[dict]]:
     """
@@ -128,28 +163,56 @@ def run_dataset_evaluation(
             img_path, mask_path,
             class_names, class_indices,
             n_samples, device,
+            uncertainty_maps_dir=uncertainty_maps_dir,
         )
         result["inference_time"] = time.time() - start
         per_image_results.append(result)
 
     total_time = time.time() - total_start
 
-    mean_ious = [r["mean_iou"] for r in per_image_results]
+    pixel_accuracies = [r["pixel_accuracy"] for r in per_image_results]
     mean_uncertainties = [r["mean_uncertainty"] for r in per_image_results]
+    std_uncertainties = [r["std_uncertainty"] for r in per_image_results]
+    mean_std_probs = [r["mean_std_prob"] for r in per_image_results]
+    std_std_probs = [r["std_std_prob"] for r in per_image_results]
 
-    per_class_ious: dict[str, list[float]] = {name: [] for name in class_names}
+    per_class_accs: dict[str, list[float]] = {name: [] for name in class_names}
+    per_class_entropy_means: dict[str, list[float]] = {name: [] for name in class_names}
+    per_class_stdprob_means: dict[str, list[float]] = {name: [] for name in class_names}
     for r in per_image_results:
-        for name, iou in r.get("per_class_iou", {}).items():
-            if iou is not None:
-                per_class_ious.setdefault(name, []).append(iou)
-    per_class_mean = {
-        name: float(np.mean(ious)) if ious else None
-        for name, ious in per_class_ious.items()
-    }
-    per_class_std = {
-        name: float(np.std(ious)) if len(ious) > 1 else 0.0
-        for name, ious in per_class_ious.items()
-    }
+        for name, acc in r.get("per_class_pixel_accuracy", {}).items():
+            if acc is not None:
+                per_class_accs.setdefault(name, []).append(acc)
+        for name, stats in r.get("per_class_uncertainty", {}).items():
+            m = stats.get("mean_normalized_entropy")
+            if m is not None:
+                per_class_entropy_means.setdefault(name, []).append(m)
+        for name, stats in r.get("per_class_channel_std_probs", {}).items():
+            m = stats.get("mean")
+            if m is not None:
+                per_class_stdprob_means.setdefault(name, []).append(m)
+
+    per_class = {}
+    for name in class_names:
+        accs = per_class_accs.get(name, [])
+        ents = per_class_entropy_means.get(name, [])
+        stdps = per_class_stdprob_means.get(name, [])
+        if not (accs or ents or stdps):
+            continue
+        per_class[name] = {
+            "pixel_accuracy": {
+                "mean": float(np.mean(accs)) if accs else None,
+                "std": float(np.std(accs)) if accs else None,
+            },
+            "mean_normalized_entropy": {
+                "mean": float(np.mean(ents)) if ents else None,
+                "std": float(np.std(ents)) if ents else None,
+            },
+            "mean_std_prob": {
+                "mean": float(np.mean(stdps)) if stdps else None,
+                "std": float(np.std(stdps)) if stdps else None,
+            },
+        }
 
     aggregate = {
         "dataset_path": str(dataset_path),
@@ -160,15 +223,17 @@ def run_dataset_evaluation(
         "device": device,
         "total_time_seconds": total_time,
         "time_per_image_seconds": total_time / len(per_image_results) if per_image_results else 0,
-        "mean_iou": float(np.mean(mean_ious)),
-        "std_iou": float(np.std(mean_ious)),
-        "mean_uncertainty": float(np.mean(mean_uncertainties)),
-        "std_uncertainty": float(np.std(mean_uncertainties)),
-        "per_class_iou": {
-            name: {"mean": per_class_mean.get(name), "std": per_class_std.get(name)}
-            for name in class_names
-            if per_class_mean.get(name) is not None
-        },
+        "pixel_accuracy_mean": _safe_mean(pixel_accuracies),
+        "pixel_accuracy_std": _safe_std(pixel_accuracies),
+        "mean_uncertainty": _safe_mean(mean_uncertainties),
+        "std_uncertainty": _safe_std(mean_uncertainties),
+        "mean_of_std_uncertainty": _safe_mean(std_uncertainties),
+        "std_of_std_uncertainty": _safe_std(std_uncertainties),
+        "mean_std_prob": _safe_mean(mean_std_probs),
+        "std_std_prob": _safe_std(mean_std_probs),
+        "mean_of_std_prob_std": _safe_mean(std_std_probs),
+        "std_of_std_prob_std": _safe_std(std_std_probs),
+        "per_class": per_class,
     }
 
     return aggregate, per_image_results
@@ -182,6 +247,7 @@ def main(
     limit: int | None = None,
     device: str | None = None,
     save_per_image: bool = True,
+    save_uncertainty_maps: bool = True,
     class_names: list[str] | None = None,
     class_indices: list[int] | None = None,
 ):
@@ -215,6 +281,7 @@ def main(
 
     print("\n[2/5] Loading model...")
     print("\n[3/5] Running MC Dropout on dataset...")
+    uncertainty_maps_dir = output_path / "uncertainty_maps" if save_uncertainty_maps else None
     aggregate, per_image_results = run_dataset_evaluation(
         dataset_path=dataset_path,
         n_samples=n_samples,
@@ -223,6 +290,7 @@ def main(
         device=device,
         class_names=class_names,
         class_indices=class_indices,
+        uncertainty_maps_dir=uncertainty_maps_dir,
         verbose=True,
     )
 
@@ -250,13 +318,26 @@ def main(
     print(f"Images processed:    {aggregate['n_images']}")
     print(f"Total time:          {aggregate['total_time_seconds']:.1f}s")
     print(f"Time per image:      {aggregate['time_per_image_seconds']:.2f}s")
-    print(f"Mean IoU:            {aggregate['mean_iou']:.4f} ± {aggregate['std_iou']:.4f}")
-    print(f"Mean uncertainty:    {aggregate['mean_uncertainty']:.6f} ± {aggregate['std_uncertainty']:.6f}")
-    if aggregate.get("per_class_iou"):
-        print("\nPer-class IoU:")
-        for name, stats in aggregate["per_class_iou"].items():
-            m, s = stats["mean"], stats.get("std", 0) or 0
-            print(f"  {name:15s}: {m:.4f} ± {s:.4f}")
+    pa_mean = aggregate["pixel_accuracy_mean"]
+    pa_std = aggregate["pixel_accuracy_std"]
+    mu_mean = aggregate["mean_uncertainty"]
+    mu_std = aggregate["std_uncertainty"]
+    sp_mean = aggregate["mean_std_prob"]
+    sp_std = aggregate["std_std_prob"]
+    print(f"Pixel accuracy:      {pa_mean:.4f} ± {pa_std:.4f}" if pa_mean is not None else "Pixel accuracy:      N/A")
+    print(f"Mean uncertainty:    {mu_mean:.6f} ± {mu_std:.6f}" if mu_mean is not None else "Mean uncertainty:    N/A")
+    print(f"Mean std_prob:       {sp_mean:.6f} ± {sp_std:.6f}" if sp_mean is not None else "Mean std_prob:       N/A")
+    if aggregate.get("per_class"):
+        print("\nPer-class summary:")
+        for name, stats in aggregate["per_class"].items():
+            acc = stats["pixel_accuracy"]["mean"]
+            acc_std = stats["pixel_accuracy"]["std"] or 0.0
+            ent = stats["mean_normalized_entropy"]["mean"]
+            stp = stats["mean_std_prob"]["mean"]
+            acc_str = f"{acc:.4f} ± {acc_std:.4f}" if acc is not None else "N/A"
+            ent_str = f"{ent:.6f}" if ent is not None else "N/A"
+            stp_str = f"{stp:.6f}" if stp is not None else "N/A"
+            print(f"  {name:15s}: acc={acc_str}, entropy={ent_str}, std_prob={stp_str}")
     print("=" * 60)
 
 
@@ -271,6 +352,11 @@ if __name__ == "__main__":
     parser.add_argument("--limit", type=int, default=None, help="Limit number of images (for testing)")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/mps/cpu)")
     parser.add_argument("--no-per-image", action="store_true", help="Skip saving per-image JSON files")
+    parser.add_argument(
+        "--no-save-uncertainty-maps",
+        action="store_true",
+        help="Skip saving per-image uncertainty maps (.npz with std_probs and normalized_entropy)",
+    )
     parser.add_argument(
         "--classes",
         type=str,
@@ -298,6 +384,7 @@ if __name__ == "__main__":
         limit=args.limit,
         device=args.device,
         save_per_image=not args.no_per_image,
+        save_uncertainty_maps=not args.no_save_uncertainty_maps,
         class_names=args.classes,
         class_indices=args.indices,
     )
