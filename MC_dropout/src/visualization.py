@@ -12,7 +12,7 @@ def visualize_results(
     ground_truth: np.ndarray,
     predictions: np.ndarray,
     normalized_entropy: np.ndarray,
-    mean_iou: float,
+    pixel_accuracy: float,
     class_names: list[str],
     save_path: Optional[str | Path] = None,
 ) -> plt.Figure:
@@ -42,7 +42,7 @@ def visualize_results(
     error_map = (predictions != ground_truth).astype(float)
     im3 = axes[1, 0].imshow(error_map, cmap="RdYlGn_r", vmin=0, vmax=1)
     axes[1, 0].set_title(
-        f"Errors (Red=Wrong, Green=Correct)\nMean IoU: {mean_iou:.4f}",
+        f"Errors (Red=Wrong, Green=Correct)\nPixel Accuracy: {pixel_accuracy:.4f}",
         fontsize=14,
     )
     axes[1, 0].axis("off")
@@ -137,8 +137,8 @@ def visualize_convergence(df_convergence, save_path: Optional[str | Path] = None
     """Visualize convergence study results (accuracy, uncertainty, time vs n_samples)."""
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 
-    # 1. Mean IoU vs Samples
-    col = "mean_iou" if "mean_iou" in df_convergence.columns else "accuracy"
+    # 1. Pixel Accuracy vs Samples
+    col = "pixel_accuracy" if "pixel_accuracy" in df_convergence.columns else "accuracy"
     axes[0, 0].plot(
         df_convergence["n_samples"],
         df_convergence[col],
@@ -147,8 +147,8 @@ def visualize_convergence(df_convergence, save_path: Optional[str | Path] = None
         markersize=8,
     )
     axes[0, 0].set_xlabel("Number of MC Samples", fontsize=12)
-    axes[0, 0].set_ylabel("Mean IoU", fontsize=12)
-    axes[0, 0].set_title("Mean IoU vs MC Samples", fontsize=14, fontweight="bold")
+    axes[0, 0].set_ylabel("Pixel Accuracy", fontsize=12)
+    axes[0, 0].set_title("Pixel Accuracy vs MC Samples", fontsize=14, fontweight="bold")
     axes[0, 0].grid(True, alpha=0.3)
 
     # 2. Mean Uncertainty vs Samples
