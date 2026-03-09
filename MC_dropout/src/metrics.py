@@ -74,48 +74,43 @@ def compute_accuracy(
     verbose: bool = True,
 ) -> tuple[float, dict]:
     """
-    Compute Mean IoU (mIoU) and per-class IoU.
+    Compute overall pixel accuracy and per-class pixel accuracy.
 
     Returns:
-        mean_iou: float - Mean IoU over classes present in ground truth
-        per_class_iou: dict mapping class name -> (iou, pixel_count) or (None, 0)
+        pixel_accuracy: float - Overall accuracy over valid pixels
+        per_class_accuracy: dict mapping class name -> (accuracy, pixel_count) or (None, 0)
     """
     valid_mask = ground_truth >= 0  # Ignore unlabeled if encoded as -1
     if valid_mask.sum() == 0:
         valid_mask = np.ones_like(ground_truth, dtype=bool)
 
-    num_classes = len(class_names)
-    iou_per_class, present_mask = compute_iou(
-        predictions, ground_truth, num_classes, ignore_index=-1
-    )
+    pred_valid = predictions[valid_mask]
+    gt_valid = ground_truth[valid_mask]
+    pixel_accuracy = float((pred_valid == gt_valid).mean()) if gt_valid.size > 0 else 0.0
 
-    # Mean IoU over classes present in ground truth
-    ious_present = iou_per_class[present_mask & ~np.isnan(iou_per_class)]
-    mean_iou = float(np.mean(ious_present)) if len(ious_present) > 0 else 0.0
-
-    per_class_iou = {}
+    per_class_accuracy = {}
     for i, name in enumerate(class_names):
-        class_mask = ground_truth == i
+        class_mask = gt_valid == i
         count = int(class_mask.sum())
         if count > 0:
-            iou = float(iou_per_class[i]) if not np.isnan(iou_per_class[i]) else 0.0
-            per_class_iou[name] = (iou, count)
+            acc = float((pred_valid[class_mask] == i).mean())
+            per_class_accuracy[name] = (acc, count)
         else:
-            per_class_iou[name] = (None, 0)
+            per_class_accuracy[name] = (None, 0)
 
     if verbose:
         print(f"\n{'='*50}")
-        print("MEAN IoU: {:.4f} ({:.2f}%)".format(mean_iou, mean_iou * 100))
+        print("PIXEL ACCURACY: {:.4f} ({:.2f}%)".format(pixel_accuracy, pixel_accuracy * 100))
         print(f"{'='*50}")
-        print("\nPER-CLASS IoU")
+        print("\nPER-CLASS PIXEL ACCURACY")
         print(f"{'='*50}")
-        for name, (iou, count) in per_class_iou.items():
-            if iou is not None:
-                print(f"  {name:15s}: {iou:.4f} ({iou*100:.2f}%) - {count} pixels")
+        for name, (acc, count) in per_class_accuracy.items():
+            if acc is not None:
+                print(f"  {name:15s}: {acc:.4f} ({acc*100:.2f}%) - {count} pixels")
             else:
                 print(f"  {name:15s}: No pixels in ground truth")
 
-    return mean_iou, per_class_iou
+    return pixel_accuracy, per_class_accuracy
 
 
 def compute_uncertainty_stats(
