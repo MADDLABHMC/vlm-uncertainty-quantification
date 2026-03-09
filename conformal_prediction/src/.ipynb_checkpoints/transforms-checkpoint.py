@@ -27,35 +27,85 @@ def make_monochrome(img):
     mono_rgb = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)  # H x W x 3
     return mono_rgb
 
-def add_gaussian_blur(img, ksize=5, sigma=1.0):
-    return cv2.GaussianBlur(img, (ksize, ksize), sigma)
+def gaussian_blur(image, sigma):
+    return cv2.GaussianBlur(image, (0, 0), sigma)
 
-def add_salt_pepper_noise(img, amount=0.01):
-    """
-    Adds salt & pepper noise.
-    
-    amount: fraction of pixels to corrupt
-    """
-    noisy = img.copy()
-    H, W = img.shape[:2]
-    
-    num_pixels = int(amount * H * W)
-    
-    # Salt (white pixels)
-    coords = (
-        np.random.randint(0, H, num_pixels),
-        np.random.randint(0, W, num_pixels)
-    )
-    noisy[coords] = 255
+def vignette(image, level = 5): 
+    height, width = image.shape[:2]
 
-    # Pepper (black pixels)
-    coords = (
-        np.random.randint(0, H, num_pixels),
-        np.random.randint(0, W, num_pixels)
-    )
-    noisy[coords] = 0
+    x_resultant_kernel = cv2.getGaussianKernel(width, width/level)
+    y_resultant_kernel = cv2.getGaussianKernel(height, height/level)
 
-    return noisy
+    kernel = y_resultant_kernel * x_resultant_kernel.T
+    mask = kernel / kernel.max()
+
+    image_vignette = np.copy(image)
+
+    for i in range(3):
+        image_vignette[:,:,i] = image_vignette[:,:,i] * mask
+
+    return image_vignette
+
+def stress_occlude(image, num_rois=2, opacity=0.8):
+    img = image.copy()
+    h, w = img.shape[:2]
+
+    for _ in range(num_rois):
+        # Sample patch size from a wide Gaussian, centered at 1/4 of image size
+        rw = int(np.clip(np.random.normal(w//4, w//4), w//8, w//2))
+        rh = int(np.clip(np.random.normal(h//4, h//4), h//8, h//2))
+        x  = np.random.randint(0, w-rw)
+        y  = np.random.randint(0, h-rh)
+        img[y:y+rh, x:x+rw] = opacity*img[y:y+rh, x:x+rw]
+
+    return img
+
+def smoke(image, num_rois=2, opacity=0.8):
+    img = image.copy()
+    h, w = img.shape[:2]
+
+    for _ in range(num_rois):
+        # Sample patch size from a wide Gaussian, centered at 1/4 of image size
+        rw = int(np.clip(np.random.normal(w//4, w//4), w//8, w//2))
+        rh = int(np.clip(np.random.normal(h//4, h//4), h//8, h//2))
+        x  = np.random.randint(0, w-rw)
+        y  = np.random.randint(0, h-rh)
+        img[y:y+rh, x:x+rw] = np.clip(
+            opacity*img[y:y+rh, x:x+rw] + (1-opacity)*255,
+            0, 255
+        )
+
+    return img
+
+# def add_gaussian_blur(img, ksize=5, sigma=1.0):
+#     return cv2.GaussianBlur(img, (ksize, ksize), sigma)
+
+# def add_salt_pepper_noise(img, amount=0.01):
+#     """
+#     Adds salt & pepper noise.
+    
+#     amount: fraction of pixels to corrupt
+#     """
+#     noisy = img.copy()
+#     H, W = img.shape[:2]
+    
+#     num_pixels = int(amount * H * W)
+    
+#     # Salt (white pixels)
+#     coords = (
+#         np.random.randint(0, H, num_pixels),
+#         np.random.randint(0, W, num_pixels)
+#     )
+#     noisy[coords] = 255
+
+#     # Pepper (black pixels)
+#     coords = (
+#         np.random.randint(0, H, num_pixels),
+#         np.random.randint(0, W, num_pixels)
+#     )
+#     noisy[coords] = 0
+
+#     return noisy
 
 if __name__ == "__main__":
     # Configuration matching the notebook
