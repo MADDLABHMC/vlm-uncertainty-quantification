@@ -79,6 +79,30 @@ python run_on_dataset.py --dataset-path /path/to/semantic_drone \
   --classes paved-area dirt grass --indices 1 2 3
 ```
 
+### Dataset with image transforms
+
+Run MC Dropout with one of the image transforms from `Image_Transform.ipynb`. Use `--transform` to select which transform to apply (one per run):
+
+```bash
+# No transform (baseline)
+python run_on_dataset_transforms.py --dataset-path /path/to/dataset --transform none
+
+# Gaussian blur (--transform-sigma, default 10)
+python run_on_dataset_transforms.py --dataset-path /path/to/dataset --transform gaussian_blur
+python run_on_dataset_transforms.py --dataset-path /path/to/dataset --transform gaussian_blur --transform-sigma 20
+
+# Vignette (--transform-level, default 5; lower = stronger)
+python run_on_dataset_transforms.py --dataset-path /path/to/dataset --transform vignette --transform-level 4
+
+# Occlusions (--transform-num-rois, --transform-opacity)
+python run_on_dataset_transforms.py --dataset-path /path/to/dataset --transform occlusions --transform-num-rois 3
+
+# Smoke (--transform-num-rois, --transform-opacity)
+python run_on_dataset_transforms.py --dataset-path /path/to/dataset --transform smoke
+```
+
+Results are saved to `outputs/transform_<name>/` when a transform is applied.
+
 ### Convergence study
 
 Test different MC sample sizes (5, 10, 20, 30, 50, 100) to find the optimal trade-off:
