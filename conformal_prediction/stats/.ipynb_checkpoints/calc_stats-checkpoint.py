@@ -152,12 +152,14 @@ if __name__ == "__main__":
     image_type_dict = {
         "normal": [],
         "monochrome": [],
-        "gaussian_blur": [2,5,10,20],
-        "vignette": [1,2,3,4],
-        "occlude": [15,20,25,30],
-        "smoke": [10,20,30,40]
+        "gaussian_blur": [2,4,6,8],
+        "vertical_blur": [11,21,31,41],
+        "horizontal_blur": [11,21,31,41],
+        "glass_blur": [1,2,3,4],
+        "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
+        "rain": [0.85, 0.70, 0.55, 0.40]
     }
-    num_images = 400
+    num_images = 10
 
     for image_type, vals in image_type_dict.items():
         if vals:

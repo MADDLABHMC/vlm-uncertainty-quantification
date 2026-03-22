@@ -81,22 +81,28 @@ def run(
         image = load_img(image_path)
         # print(image_type)
         if image_type == "monochrome":
-            image = make_monochrome(image)
+            image = apply_grayscale(image)
         elif image_type.startswith("gaussian_blur_"):
             sigma = int(image_type.split("_")[-1])
-            image = gaussian_blur(image, sigma=sigma)
-        elif image_type.startswith("vignette_"):
+            image = apply_gaussian_blur(image, sigma=sigma)
+        elif image_type.startswith("vertical_blur_"):
             level = int(image_type.split("_")[-1])
-            image = vignette(image, level=level)
-        elif image_type.startswith("occlude_"):
-            num_rois = int(image_type.split("_")[-1])
-            image = stress_occlude(image, num_rois=num_rois)
-        elif image_type.startswith("smoke_"):
-            num_rois = int(image_type.split("_")[-1])
-            image = smoke(image, num_rois=num_rois)
+            image = apply_vertical_blur(image, blur_limit=(level, level))
+        elif image_type.startswith("horizontal_blur_"):
+            level = int(image_type.split("_")[-1])
+            image = apply_horizontal_blur(image, blur_limit=(level, level))
+        elif image_type.startswith("glass_blur_"):
+            level = int(image_type.split("_")[-1])
+            image = apply_glass_blur(image, max_delta=level)
+        elif image_type.startswith("atmospheric_fog_"):
+            level = float(image_type.split("_")[-1])
+            image = apply_atmospheric_fog(image, alpha_coef=level)
+        elif image_type.startswith("rain_"):
+            level = float(image_type.split("_")[-1])
+            image = apply_rain(image, k=level) 
         elif image_type != "normal":
             raise ValueError(f"Unrecognized image_type: {image_type}. "
-                             f"Expected one of ['normal', 'monochrome', 'gaussian_blur', 'salt_and_pepper']")
+                             f"Expected one of ['normal', 'gaussian_blur', 'vertical_blur', 'horizontal_blur', 'glass_blur', 'atmospheric_fog', 'rain']")
 
         # Model prediction
         start_model = time.perf_counter()
@@ -157,21 +163,15 @@ if __name__ == "__main__":
     image_type_dict = {
         "normal": [],
         "monochrome": [],
-        "gaussian_blur": [2,5,10,20],
-        "vignette": [1,2,3,4],
-        "occlude": [15,20,25,30],
-        "smoke": [10,20,30,40]
+        "gaussian_blur": [2,4,6,8],
+        "vertical_blur": [11,21,31,41],
+        "horizontal_blur": [11,21,31,41],
+        "glass_blur": [1,2,3,4],
+        "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
+        "rain": [0.85, 0.70, 0.55, 0.40]
     }
-    # image_type_dict = {
-    #     "normal": [],
-    #     "monochrome": [],
-    #     # "gaussian_blur": [2,5],
-    #     # "vignette": [1,2],
-    #     # "occlude": [15,20],
-    #     # "smoke": [10,20]
-    # }
 
-    num_images = None
+    num_images = 10
     # run(
     #     dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
     #     indices=[1, 3, 9, 17, 19, 21, 22],

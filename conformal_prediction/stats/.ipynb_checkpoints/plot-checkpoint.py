@@ -8,12 +8,14 @@ from collections import defaultdict
 
 
 IMAGE_TYPE_COLORS = {
-    "normal":        "#FF9800",  # orange — reference bar
-    "monochrome":    "#9E9E9E",  # grey
-    "gaussian_blur": "#4CAF50",  # green
-    "vignette":      "#2196F3",  # blue
-    "occlude":       "#9C27B0",  # purple
-    "smoke":         "#00BCD4",  # cyan
+    "normal":            "#FF9800",  # orange
+    "monochrome":        "#9E9E9E",  # grey
+    "gaussian_blur":     "#4CAF50",  # green
+    "vertical_blur":     "#8BC34A",  # light green
+    "horizontal_blur":   "#2E7D32",  # dark green
+    "glass_blur":        "#009688",  # teal
+    "atmospheric_fog":   "#00BCD4",  # cyan
+    "rain":              "#3F51B5",  # indigo
 }
 
 
@@ -166,12 +168,14 @@ if __name__ == "__main__":
     image_type_dict = {
         "normal": [],
         "monochrome": [],
-        "gaussian_blur": [2,5,10,20],
-        "vignette": [1,2,3,4],
-        "occlude": [15,20,25,30],
-        "smoke": [10,20,30,40]
+        "gaussian_blur": [2,4,6,8],
+        "vertical_blur": [11,21,31,41],
+        "horizontal_blur": [11,21,31,41],
+        "glass_blur": [1,2,3,4],
+        "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
+        "rain": [0.85, 0.70, 0.55, 0.40]
     }
-    num_images = 400
+    num_images = 10
     
     image_types = []
     for image_type, vals in image_type_dict.items():
