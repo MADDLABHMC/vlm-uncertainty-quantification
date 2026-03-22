@@ -1,0 +1,43 @@
+{
+  "dataset_path": "/lambda/nfs/spring2026maddlabsg/datasets/1/semantic_drone",
+  "dropout_rates": [
+    0.3,
+    0.7
+  ],
+  "n_samples": 150,
+  "n_images": 400,
+  "best_class": null,
+  "best_pixel_accuracy": null,
+  "worst_class": null,
+  "worst_pixel_accuracy": null,
+  "per_class_overall": {},
+  "results_by_dropout": {
+    "0.3": {
+      "pixel_accuracy_mean": 0.6196120585291839,
+      "pixel_accuracy_std": 0.1764560618171015,
+      "mean_uncertainty": 0.4144432327454837,
+      "std_uncertainty": 0.10273769803740301,
+      "time_per_image_seconds": 30.64758852005005,
+      "total_time_seconds": 12259.03540802002,
+      "temperature": 0.9544177191070475,
+      "per_class": null
+    },
+    "0.7": {
+      "pixel_accuracy_mean": 0.6198697580384814,
+      "pixel_accuracy_std": 0.1764107073961348,
+      "mean_uncertainty": 0.4128384841880006,
+      "std_uncertainty": 0.10307610904172455,
+      "time_per_image_seconds": 30.470090663433076,
+      "total_time_seconds": 12188.03626537323,
+      "temperature": 0.9298362994470206,
+      "per_class": null
+    }
+  },
+  "overall": {
+    "pixel_accuracy_mean": 0.6197409082838327,
+    "pixel_accuracy_std": 0.00012884975464877435,
+    "mean_uncertainty": 0.41364085846674215,
+    "std_uncertainty": 0.0008023742787415522,
+    "time_per_image_seconds_mean": 30.558839591741563
+  }
+}
