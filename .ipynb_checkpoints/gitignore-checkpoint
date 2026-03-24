@@ -1,11 +1,11 @@
 # Ignore everything in stats/
-conformal_prediction/stats/coverage_vals
-conformal_prediction/stats/pixel_counts
-conformal_prediction/stats/pred_sets_overall
-conformal_prediction/stats/prediction_sets
-conformal_prediction/stats/set_sizes
-conformal_prediction/stats/thresholds
-conformal_prediction/stats/times
+conformal_prediction/new_stats/coverage_vals/
+conformal_prediction/new_stats/pixel_counts
+conformal_prediction/new_stats/pred_sets_overall
+conformal_prediction/new_stats/prediction_sets
+conformal_prediction/new_stats/set_sizes
+conformal_prediction/new_stats/thresholds
+conformal_prediction/new_stats/times
 
 # Ignore all .pkl files
 *.pkl
