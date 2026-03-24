@@ -132,17 +132,29 @@ def plot(
 
 
 if __name__ == "__main__":
+    # image_type_dict = {
+    #     "normal": [],
+    #     "monochrome": [],
+    #     "gaussian_blur": [2,4,6,8],
+    #     "vertical_blur": [11,21,31,41],
+    #     "horizontal_blur": [11,21,31,41],
+    #     "glass_blur": [1,2,3,4],
+    #     "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
+    #     "rain": [0.85, 0.70, 0.55, 0.40]
+    # }
+    # num_images = 10
     image_type_dict = {
         "normal": [],
         "monochrome": [],
-        "gaussian_blur": [2,4,6,8],
-        "vertical_blur": [11,21,31,41],
-        "horizontal_blur": [11,21,31,41],
-        "glass_blur": [1,2,3,4],
-        "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
-        "rain": [0.85, 0.70, 0.55, 0.40]
+        "gaussian_blur": [2],
+        "vertical_blur": [11],
+        "horizontal_blur": [11],
+        "glass_blur": [1],
+        "atmospheric_fog": [0.05],
+        "rain": [0.85]
     }
-    num_images = 10
+
+    num_images = 5
     
     image_types = []
     for image_type, vals in image_type_dict.items():
