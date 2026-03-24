@@ -1,5 +1,11 @@
-conformal_prediction/stats/*
-!conformal_prediction/stats/plots/
-!conformal_prediction/stats/calc_stats.py
-!conformal_prediction/stats/plot.py
+# Ignore everything in stats/
+conformal_prediction/stats/coverage_vals
+conformal_prediction/stats/pixel_counts
+conformal_prediction/stats/pred_sets_overall
+conformal_prediction/stats/prediction_sets
+conformal_prediction/stats/set_sizes
+conformal_prediction/stats/thresholds
+conformal_prediction/stats/times
+
+# Ignore all .pkl files
 *.pkl
