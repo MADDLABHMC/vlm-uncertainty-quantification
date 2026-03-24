@@ -30,7 +30,7 @@ def run(
     target_size=(352, 352),
     alpha=0.1,
     num_images=None,           # None = all images
-    stats_dir="stats",
+    stats_dir="new_stats",
     image_type="normal"
 ):
     """
@@ -163,15 +163,27 @@ if __name__ == "__main__":
     image_type_dict = {
         "normal": [],
         "monochrome": [],
-        "gaussian_blur": [2,4,6,8],
-        "vertical_blur": [11,21,31,41],
-        "horizontal_blur": [11,21,31,41],
-        "glass_blur": [1,2,3,4],
-        "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
-        "rain": [0.85, 0.70, 0.55, 0.40]
+        "gaussian_blur": [2],
+        "vertical_blur": [11],
+        "horizontal_blur": [11],
+        "glass_blur": [1],
+        "atmospheric_fog": [0.05],
+        "rain": [0.85]
     }
 
-    num_images = 10
+    num_images = 5
+    # image_type_dict = {
+    #     "normal": [],
+    #     "monochrome": [],
+    #     "gaussian_blur": [2,4,6,8],
+    #     "vertical_blur": [11,21,31,41],
+    #     "horizontal_blur": [11,21,31,41],
+    #     "glass_blur": [1,2,3,4],
+    #     "atmospheric_fog": [0.05, 0.10, 0.15, 0.20],
+    #     "rain": [0.85, 0.70, 0.55, 0.40]
+    # }
+
+    # num_images = None
     # run(
     #     dataset_path="/home/ubuntu/spring2026maddlabsg/datasets/1/semantic_drone",
     #     indices=[1, 3, 9, 17, 19, 21, 22],
@@ -191,7 +203,7 @@ if __name__ == "__main__":
                     target_size=(352, 352),
                     alpha=0.1,
                     num_images=num_images,
-                    stats_dir="stats",
+                    stats_dir="new_stats",
                     image_type=f"{image_type}_{val}"
                 )
         else: 
@@ -201,7 +213,7 @@ if __name__ == "__main__":
                 target_size=(352, 352),
                 alpha=0.1,
                 num_images=num_images,
-                stats_dir="stats",
+                stats_dir="new_stats",
                 image_type=image_type
             )
     
