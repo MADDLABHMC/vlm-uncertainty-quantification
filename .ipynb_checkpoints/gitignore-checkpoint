@@ -1,4 +1,4 @@
-conformal_prediction/stats/
+conformal_prediction/stats/*
 !conformal_prediction/stats/plots/
 !conformal_prediction/stats/calc_stats.py
 !conformal_prediction/stats/plot.py
