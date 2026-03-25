@@ -41,6 +41,97 @@ def _safe_std(x):
     return float(np.std(x)) if x else None
 
 
+def aggregate_from_per_image_results(
+    per_image_results: list[dict],
+    class_names: list[str],
+    dataset_path: Path,
+    n_samples: int,
+    temperature: float,
+    total_time: float,
+    dropout_rate: float,
+) -> dict:
+    """
+    Build aggregate dict from per-image result dicts (same schema as run_single_image output).
+    """
+    accs = [r["pixel_accuracy"] for r in per_image_results]
+    uncs = [r["mean_uncertainty"] for r in per_image_results]
+    mean_std_probs = [
+        r.get("mean_std_prob") for r in per_image_results if r.get("mean_std_prob") is not None
+    ]
+    std_std_probs = [
+        r.get("std_std_prob") for r in per_image_results if r.get("std_std_prob") is not None
+    ]
+
+    per_class_accs: dict[str, list[float]] = {name: [] for name in class_names}
+    per_class_entropy_means: dict[str, list[float]] = {name: [] for name in class_names}
+    per_class_entropy_std_of_pixels: dict[str, list[float]] = {
+        name: [] for name in class_names
+    }
+    per_class_stdprob_means: dict[str, list[float]] = {name: [] for name in class_names}
+    for r in per_image_results:
+        for name, acc in r.get("per_class_pixel_accuracy", {}).items():
+            if acc is not None:
+                per_class_accs.setdefault(name, []).append(acc)
+        for name, stats in r.get("per_class_uncertainty", {}).items():
+            m = stats.get("mean_normalized_entropy")
+            if m is not None:
+                per_class_entropy_means.setdefault(name, []).append(m)
+            sp = stats.get("std_normalized_entropy")
+            if sp is not None:
+                per_class_entropy_std_of_pixels.setdefault(name, []).append(sp)
+        for name, stats in r.get("per_class_channel_std_probs", {}).items():
+            m = stats.get("mean")
+            if m is not None:
+                per_class_stdprob_means.setdefault(name, []).append(m)
+
+    per_class = {}
+    for name in class_names:
+        accs_c = per_class_accs.get(name, [])
+        ents_c = per_class_entropy_means.get(name, [])
+        ent_stds_c = per_class_entropy_std_of_pixels.get(name, [])
+        stdps_c = per_class_stdprob_means.get(name, [])
+        if not (accs_c or ents_c or ent_stds_c or stdps_c):
+            continue
+        per_class[name] = {
+            "pixel_accuracy": {
+                "mean": float(np.mean(accs_c)) if accs_c else None,
+                "std": float(np.std(accs_c)) if accs_c else None,
+            },
+            "mean_normalized_entropy": {
+                "mean": float(np.mean(ents_c)) if ents_c else None,
+                "std": float(np.std(ents_c)) if ents_c else None,
+            },
+            "std_normalized_entropy": {
+                "mean": float(np.mean(ent_stds_c)) if ent_stds_c else None,
+                "std": float(np.std(ent_stds_c)) if ent_stds_c else None,
+            },
+            "mean_std_prob": {
+                "mean": float(np.mean(stdps_c)) if stdps_c else None,
+                "std": float(np.std(stdps_c)) if stdps_c else None,
+            },
+        }
+
+    return {
+        "method": "Temperature-Scaled MC Dropout",
+        "dataset_path": str(dataset_path),
+        "n_images": len(per_image_results),
+        "n_samples": n_samples,
+        "temperature": temperature,
+        "dropout_rate": dropout_rate,
+        "total_time_seconds": total_time,
+        "time_per_image_seconds": total_time / len(per_image_results) if per_image_results else 0,
+        "pixel_accuracy_mean": _safe_mean(accs),
+        "pixel_accuracy_std": _safe_std(accs),
+        "mean_uncertainty": _safe_mean(uncs),
+        "std_uncertainty": _safe_std(uncs),
+        "mean_std_prob": _safe_mean(mean_std_probs),
+        "std_std_prob": _safe_std(mean_std_probs),
+        "mean_of_std_prob_std": _safe_mean(std_std_probs),
+        "std_of_std_prob_std": _safe_std(std_std_probs),
+        "per_class": per_class,
+    }
+
+
 def run_single_image(
     model,
     processor,
@@ -51,6 +142,9 @@ def run_single_image(
     temperature: float,
     n_samples: int,
     device: str,
+    transform_name: str | None = None,
+    transform_kwargs: dict | None = None,
+    image_index: int = 0,
 ) -> dict:
     """Run Temperature-Scaled MC Dropout on a single image."""
     image, ground_truth, _, _ = load_image_and_mask(
@@ -58,6 +152,14 @@ def run_single_image(
         class_names=class_names,
         class_indices=class_indices,
     )
+
+    if transform_name:
+        from src.transforms import apply_transform
+
+        kwargs = dict(transform_kwargs or {})
+        if transform_name in ("occlusions", "smoke") and "seed" not in kwargs:
+            kwargs["seed"] = image_index
+        image = apply_transform(image, transform_name, **kwargs)
 
     mean_probs, std_probs, normalized_entropy = mc_temperature_predict(
         model, processor, image, class_names,
@@ -77,12 +179,23 @@ def run_single_image(
         if acc is not None
     }
     per_class_uncertainty = {}
+    per_class_channel_std_probs = {}
     for i, name in enumerate(class_names):
         class_mask = ground_truth == i
-        if class_mask.sum() > 0:
-            per_class_uncertainty[name] = {
-                "mean_normalized_entropy": float(normalized_entropy[class_mask].mean()),
-            }
+        n_class_pixels = int(class_mask.sum())
+        if n_class_pixels <= 0:
+            continue
+
+        class_entropy = normalized_entropy[class_mask]
+        class_std_prob = std_probs[:, :, i][class_mask]
+        per_class_uncertainty[name] = {
+            "mean_normalized_entropy": float(class_entropy.mean()),
+            "std_normalized_entropy": float(class_entropy.std()),
+        }
+        per_class_channel_std_probs[name] = {
+            "mean": float(class_std_prob.mean()),
+            "std": float(class_std_prob.std()),
+        }
 
     return {
         "image": image_path.name,
@@ -90,6 +203,7 @@ def run_single_image(
         "mean_uncertainty": float(normalized_entropy.mean()),
         "per_class_pixel_accuracy": per_class_pixel_accuracy,
         "per_class_uncertainty": per_class_uncertainty,
+        "per_class_channel_std_probs": per_class_channel_std_probs,
     }
 
 
@@ -97,6 +211,7 @@ def main(
     dataset_path: str,
     output_dir: str = "outputs",
     n_samples: int = 25,
+    dropout_rate: float = 0.3,
     val_images_min: int = 30,
     max_val_images: int = 50,
     limit: int | None = None,
@@ -128,7 +243,7 @@ def main(
     print(f"  Classes: {len(class_names)}")
 
     print("\n[2/4] Loading model and calibrating temperature...")
-    model, processor = load_model(dropout_rate=0.3)
+    model, processor = load_model(dropout_rate=dropout_rate)
     model.to(device)
 
     temperature = calibrate_temperature(
@@ -153,26 +268,29 @@ def main(
             class_names, class_indices,
             temperature, n_samples, device,
         )
+        # Global mean/std over std_probs for this image
+        if "per_class_channel_std_probs" in result and result["per_class_channel_std_probs"]:
+            all_std_vals = []
+            for stats in result["per_class_channel_std_probs"].values():
+                m = stats.get("mean")
+                if m is not None:
+                    all_std_vals.append(m)
+            if all_std_vals:
+                result["mean_std_prob"] = float(np.mean(all_std_vals))
+                result["std_std_prob"] = float(np.std(all_std_vals))
         per_image_results.append(result)
     total_time = time.time() - start
 
     print("\n[4/4] Aggregating results...")
-    accs = [r["pixel_accuracy"] for r in per_image_results]
-    uncs = [r["mean_uncertainty"] for r in per_image_results]
-
-    aggregate = {
-        "method": "Temperature-Scaled MC Dropout",
-        "dataset_path": str(dataset_path),
-        "n_images": len(per_image_results),
-        "n_samples": n_samples,
-        "temperature": temperature,
-        "total_time_seconds": total_time,
-        "time_per_image_seconds": total_time / len(per_image_results) if per_image_results else 0,
-        "pixel_accuracy_mean": _safe_mean(accs),
-        "pixel_accuracy_std": _safe_std(accs),
-        "mean_uncertainty": _safe_mean(uncs),
-        "std_uncertainty": _safe_std(uncs),
-    }
+    aggregate = aggregate_from_per_image_results(
+        per_image_results,
+        class_names,
+        dataset_path,
+        n_samples,
+        temperature,
+        total_time,
+        dropout_rate,
+    )
 
     results_path = output_path / "dataset_results.json"
     with open(results_path, "w") as f:
@@ -192,6 +310,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset-path", type=str, required=True)
     parser.add_argument("--output-dir", type=str, default="outputs")
     parser.add_argument("--n-samples", type=int, default=25)
+    parser.add_argument("--dropout-rate", type=float, default=0.3)
     parser.add_argument("--val-images-min", type=int, default=30)
     parser.add_argument("--max-val-images", type=int, default=50)
     parser.add_argument("--limit", type=int, default=None)
@@ -204,6 +323,7 @@ if __name__ == "__main__":
         dataset_path=args.dataset_path,
         output_dir=args.output_dir,
         n_samples=args.n_samples,
+        dropout_rate=args.dropout_rate,
         val_images_min=args.val_images_min,
         max_val_images=args.max_val_images,
         limit=args.limit,

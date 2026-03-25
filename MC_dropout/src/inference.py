@@ -30,7 +30,7 @@ def mc_dropout_predict(
         verbose: Whether to show progress bar
 
     Returns:
-        mean_probs: (H, W, num_classes) - Mean probabilities across samples
+        mean_probs: (H, W, num_classes) - Mean softmax probabilities across samples
         std_probs: (H, W, num_classes) - Standard deviation (uncertainty)
         all_probs: (n_samples, num_classes, H, W) - All predictions
     """
@@ -54,8 +54,8 @@ def mc_dropout_predict(
     with torch.no_grad():
         for _ in iterator:
             outputs = model(**inputs)
-            logits = outputs.logits
-            probs = torch.sigmoid(logits)
+            logits = outputs.logits  # (num_classes, H, W)
+            probs = torch.softmax(logits, dim=0)
             all_probs.append(probs.cpu().numpy())
 
             del outputs, logits, probs
