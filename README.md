@@ -14,6 +14,8 @@ The three methods explored here represent a spectrum of UQ approaches:
 - **MC Temperature Sampling** — Uncertainty via sampling with controlled randomness
 - **Conformal Prediction** — Distribution-free, statistically rigorous prediction sets
 
+The dataset used for this project is from [Kaggle](https://www.kaggle.com/datasets/nunenuh/semantic-drone).
+
 ---
 
 ## Repository Structure
